@@ -6,6 +6,7 @@ from torchvision import transforms
 from sklearn.metrics import f1_score, accuracy_score, classification_report
 from torch.utils.tensorboard import SummaryWriter
 import matplotlib.pyplot as plt
+import numpy as np
 
 from src.datasets.volleyball_clip_dataset import VolleyballClipDataset
 from src.models.b1_resnet import ResNetB1
@@ -35,11 +36,13 @@ def train_b1(cfg):
     transform_train = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.RandomHorizontalFlip(),
+        transforms.ColorJitter(brightness=0.2,contrast=0.2,saturation=0.2),
+        transforms.RandomAffine(degrees=5,translate=(0.05, 0.05)),
         transforms.ToTensor(),
         transforms.Normalize(
-                            [0.485, 0.456, 0.406],
-                            [0.229, 0.224, 0.225])
-                            ])
+            [0.485, 0.456, 0.406],
+            [0.229, 0.224, 0.225])])
+
     
     transform_val = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -61,7 +64,17 @@ def train_b1(cfg):
     lr=cfg["training"]["lr"],
     weight_decay=cfg["training"]["weight_decay"])
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
-    criterion = torch.nn.CrossEntropyLoss()
+
+    labels = [label for _, label in train_ds]
+    labels = np.array(labels)
+
+    class_counts = np.bincount(labels)
+    class_weights = 1.0 / class_counts
+    class_weights = class_weights / class_weights.sum() * len(class_counts)
+
+    class_weights = torch.tensor(class_weights, dtype=torch.float).to(device)
+    criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
+
 
     start_mlflow(cfg["experiment"]["name"], cfg["output"]["mlruns_dir"])
     log_params({

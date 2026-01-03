@@ -28,9 +28,9 @@ labels:
 training:
   epochs: 3
   batch_size: 2
-  lr: 0.0001
+  lr: 0.00001
   optimizer: AdamW
-  weight_decay: 0.0001
+  weight_decay: 0.00001
   num_workers: 0
 
 output:

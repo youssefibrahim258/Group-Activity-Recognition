@@ -12,6 +12,9 @@ class ResNetB1(nn.Module):
         for p in base_model.parameters():
             p.requires_grad = False
 
+        for p in base_model.layer3.parameters():
+            p.requires_grad = True
+
         for p in base_model.layer4.parameters():
             p.requires_grad = True
 
