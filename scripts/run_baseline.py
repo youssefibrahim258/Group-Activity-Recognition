@@ -1,3 +1,5 @@
+import warnings
+warnings.filterwarnings("ignore")
 import argparse
 import yaml
 from src.pipelines.B1.train_b1 import train_b1

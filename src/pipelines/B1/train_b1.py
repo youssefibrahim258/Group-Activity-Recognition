@@ -56,8 +56,11 @@ def train_b1(cfg):
     val_loader = DataLoader(val_ds, batch_size=cfg["training"]["batch_size"], shuffle=False, num_workers=cfg["training"]["num_workers"])
 
     model = ResNetB1(cfg["num_classes"]).to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg["training"]["lr"], weight_decay=cfg["training"]["weight_decay"])
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.9)
+    optimizer = torch.optim.AdamW(
+    filter(lambda p: p.requires_grad, model.parameters()),
+    lr=cfg["training"]["lr"],
+    weight_decay=cfg["training"]["weight_decay"])
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
     criterion = torch.nn.CrossEntropyLoss()
 
     start_mlflow(cfg["experiment"]["name"], cfg["output"]["mlruns_dir"])

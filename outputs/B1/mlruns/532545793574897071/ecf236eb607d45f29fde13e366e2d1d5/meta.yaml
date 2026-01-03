@@ -1,0 +1,14 @@
+artifact_uri: file:///Y:/02_DL/200_projects/group-activity-recognition-volleyball/outputs/B1/mlruns/532545793574897071/ecf236eb607d45f29fde13e366e2d1d5/artifacts
+end_time: 1767467356667
+entry_point_name: ''
+experiment_id: '532545793574897071'
+lifecycle_stage: active
+run_id: ecf236eb607d45f29fde13e366e2d1d5
+run_name: B1_test
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1767467356539
+status: 3
+tags: []
+user_id: '20102'

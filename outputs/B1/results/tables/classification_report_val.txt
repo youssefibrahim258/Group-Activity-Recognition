@@ -1,0 +1,14 @@
+              precision    recall  f1-score   support
+
+       r_set       0.00      0.00      0.00         0
+     r_spike       0.00      0.00      0.00         0
+      r-pass       1.00      1.00      1.00         1
+  r_winpoint       0.00      0.00      0.00         0
+  l_winpoint       0.00      0.00      0.00         0
+      l-pass       0.00      0.00      0.00         0
+     l-spike       0.00      0.00      0.00         0
+       l_set       1.00      1.00      1.00         1
+
+   micro avg       1.00      1.00      1.00         2
+   macro avg       0.25      0.25      0.25         2
+weighted avg       1.00      1.00      1.00         2
