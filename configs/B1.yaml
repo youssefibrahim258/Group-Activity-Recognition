@@ -1,0 +1,42 @@
+baseline: B1
+seed: 42
+num_classes: 8
+
+experiment:
+  name: "Baseline_B1"
+  description: "Single-frame ResNet50 baseline for volleyball group activity recognition"
+  version: 1
+
+data:
+  videos_dir: data_set/videos_sample
+  splits:
+    train: [7, 10]
+    val: [10]
+    test: [7]
+
+labels:
+  class_names: 
+    - r_set
+    - r_spike
+    - r-pass
+    - r_winpoint
+    - l_winpoint
+    - l-pass
+    - l-spike
+    - l_set
+
+
+
+training:
+  epochs: 3
+  batch_size: 2
+  lr: 0.0001
+  optimizer: AdamW
+  weight_decay: 0.0001
+  num_workers: 0
+
+output:
+  base_dir: outputs/B1
+  checkpoints_dir: outputs/B1/checkpoints
+  results_dir: outputs/B1/results
+  mlruns_dir: outputs/B1/mlruns
