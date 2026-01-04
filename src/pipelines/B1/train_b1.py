@@ -17,6 +17,37 @@ from src.mlflow.logger import start_mlflow, log_params, log_metrics, end_mlflow
 from src.utils.logger import setup_logger
 from src.utils.set_seed import set_seed
 
+from torchvision import transforms
+
+transform_train = transforms.Compose([
+    transforms.Resize((256, 256)),
+
+    transforms.RandomHorizontalFlip(p=0.5),
+
+    transforms.RandomResizedCrop(
+        size=(224, 224),
+        scale=(0.8, 1.0),
+        ratio=(0.9, 1.1)
+    ),
+
+    transforms.ColorJitter(
+        brightness=0.3,
+        contrast=0.3,
+        saturation=0.2,
+        hue=0.05
+    ),
+
+    transforms.RandomRotation(degrees=5),
+
+    transforms.ToTensor(),
+
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    ),
+])
+
+
 def train_b1(cfg):
     set_seed(cfg.get("seed", 42))
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -34,20 +65,42 @@ def train_b1(cfg):
     logger.info(f"Using device: {device}")
 
     transform_train = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ColorJitter(brightness=0.2,contrast=0.2,saturation=0.2),
-        transforms.RandomAffine(degrees=5,translate=(0.05, 0.05)),
+        transforms.Resize((256, 256)),
+
+        transforms.RandomHorizontalFlip(p=0.5),
+
+        transforms.RandomResizedCrop(
+            size=(224, 224),
+            scale=(0.8, 1.0),
+            ratio=(0.9, 1.1)
+        ),
+
+        transforms.ColorJitter(
+            brightness=0.3,
+            contrast=0.3,
+            saturation=0.2,
+            hue=0.05
+        ),
+
+        transforms.RandomRotation(degrees=5),
+
         transforms.ToTensor(),
+
         transforms.Normalize(
-            [0.485, 0.456, 0.406],
-            [0.229, 0.224, 0.225])])
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        ),
+    ])
 
     
     transform_val = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize((256, 256)),
+        transforms.CenterCrop((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        ),
     ])
 
     encoder = LabelEncoder(class_names=cfg["labels"]["class_names"])
@@ -57,13 +110,15 @@ def train_b1(cfg):
 
     train_loader = DataLoader(train_ds, batch_size=cfg["training"]["batch_size"], shuffle=True, num_workers=cfg["training"]["num_workers"])
     val_loader = DataLoader(val_ds, batch_size=cfg["training"]["batch_size"], shuffle=False, num_workers=cfg["training"]["num_workers"])
-
+    
+    
     model = ResNetB1(cfg["num_classes"]).to(device)
     optimizer = torch.optim.AdamW(
     filter(lambda p: p.requires_grad, model.parameters()),
     lr=cfg["training"]["lr"],
     weight_decay=cfg["training"]["weight_decay"])
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=cfg["training"]["epochs"])
 
     labels = [label for _, label in train_ds]
     labels = np.array(labels)
@@ -88,7 +143,7 @@ def train_b1(cfg):
     best_val_f1 = float('-inf')
     best_ckpt = os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")
     early_stop_counter = 0
-    patience = 5
+    patience = 7
 
     train_loss_history, val_f1_history = [], []
 

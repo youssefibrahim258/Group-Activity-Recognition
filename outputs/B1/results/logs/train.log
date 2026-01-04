@@ -86,3 +86,31 @@ weighted avg       1.00      1.00      1.00         2
 weighted avg       0.00      0.00      0.00       2.0
 
 2026-01-03 21:39:40,891 [INFO] Training completed successfully.
+2026-01-04 06:39:24,729 [INFO] Starting training: B1
+2026-01-04 06:39:24,729 [INFO] Using device: cuda
+2026-01-04 06:41:04,143 [INFO] Starting training: B1
+2026-01-04 06:41:04,143 [INFO] Using device: cuda
+2026-01-04 06:42:42,573 [INFO] Starting training: B1
+2026-01-04 06:42:42,573 [INFO] Using device: cuda
+2026-01-04 06:44:04,653 [INFO] Starting training: B1
+2026-01-04 06:44:04,653 [INFO] Using device: cuda
+2026-01-04 06:44:07,191 [INFO] [Epoch 1/3] Train F1: 0.0000 | Val F1: 0.0000
+2026-01-04 06:44:07,445 [INFO] [Epoch 2/3] Train F1: 0.0000 | Val F1: 0.0000
+2026-01-04 06:44:07,584 [INFO] [Epoch 3/3] Train F1: 0.0000 | Val F1: 0.0000
+2026-01-04 06:44:07,695 [INFO] Final Validation Classification Report:
+              precision    recall  f1-score   support
+
+       r_set       0.00      0.00      0.00       0.0
+     r_spike       0.00      0.00      0.00       0.0
+      r-pass       0.00      0.00      0.00       1.0
+  r_winpoint       0.00      0.00      0.00       0.0
+  l_winpoint       0.00      0.00      0.00       0.0
+      l-pass       0.00      0.00      0.00       0.0
+     l-spike       0.00      0.00      0.00       0.0
+       l_set       0.00      0.00      0.00       1.0
+
+   micro avg       0.00      0.00      0.00       2.0
+   macro avg       0.00      0.00      0.00       2.0
+weighted avg       0.00      0.00      0.00       2.0
+
+2026-01-04 06:44:08,110 [INFO] Training completed successfully.
