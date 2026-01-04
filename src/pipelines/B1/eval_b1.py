@@ -54,7 +54,15 @@ def eval_b1(cfg):
     if not os.path.exists(checkpoint):
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint}")
 
-    model.load_state_dict(torch.load(checkpoint, map_location=device))
+    state_dict = torch.load(checkpoint, map_location=device)
+    new_state_dict = {}
+    for k, v in state_dict.items():
+        if k.startswith("model."):
+            new_state_dict[k[6:]] = v  # إزالة "model."
+    else:
+        new_state_dict[k] = v
+
+    model.load_state_dict(new_state_dict, strict=False)
     model.eval()
 
     start_mlflow(cfg["baseline"] + "_test", cfg["output"]["mlruns_dir"])

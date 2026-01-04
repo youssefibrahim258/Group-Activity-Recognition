@@ -1,62 +1,25 @@
 import os
-import csv
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from sklearn.metrics import f1_score, accuracy_score, classification_report
 from torch.utils.tensorboard import SummaryWriter
-import matplotlib.pyplot as plt
-import numpy as np
 
 from src.datasets.volleyball_clip_dataset import VolleyballClipDataset
 from src.models.b1_resnet import ResNetB1
 from src.utils.label_encoder import LabelEncoder
-from src.utils_data.annotations import load_video_annotations
-from src.utils.plots import plot_confusion_matrix,plot_val_f1,plot_train_loss
-from src.mlflow.logger import start_mlflow, log_params, log_metrics, end_mlflow
-from src.utils.logger import setup_logger
 from src.utils.set_seed import set_seed
-
-from torchvision import transforms
-
-transform_train = transforms.Compose([
-    transforms.Resize((256, 256)),
-
-    transforms.RandomHorizontalFlip(p=0.5),
-
-    transforms.RandomResizedCrop(
-        size=(224, 224),
-        scale=(0.8, 1.0),
-        ratio=(0.9, 1.1)
-    ),
-
-    transforms.ColorJitter(
-        brightness=0.3,
-        contrast=0.3,
-        saturation=0.2,
-        hue=0.05
-    ),
-
-    transforms.RandomRotation(degrees=5),
-
-    transforms.ToTensor(),
-
-    transforms.Normalize(
-        mean=[0.485, 0.456, 0.406],
-        std=[0.229, 0.224, 0.225]
-    ),
-])
-
+from src.utils.logger import setup_logger
+from src.utils.plots import plot_confusion_matrix, plot_train_loss, plot_val_f1
 
 def train_b1(cfg):
     set_seed(cfg.get("seed", 42))
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     os.makedirs(cfg["output"]["checkpoints_dir"], exist_ok=True)
-    os.makedirs(os.path.join(cfg["output"]["results_dir"], "tables"), exist_ok=True)
-    os.makedirs(os.path.join(cfg["output"]["results_dir"], "plots"), exist_ok=True)
+    os.makedirs(cfg["output"]["results_dir"], exist_ok=True)
     os.makedirs(os.path.join(cfg["output"]["results_dir"], "tensorboard"), exist_ok=True)
-    os.makedirs(os.path.join(cfg["output"]["results_dir"], "logs"), exist_ok=True)
 
     logger = setup_logger(os.path.join(cfg["output"]["results_dir"], "logs"), "train")
     writer = SummaryWriter(log_dir=os.path.join(cfg["output"]["results_dir"], "tensorboard"))
@@ -65,93 +28,65 @@ def train_b1(cfg):
     logger.info(f"Using device: {device}")
 
     transform_train = transforms.Compose([
-        transforms.Resize((256, 256)),
-
-        transforms.RandomHorizontalFlip(p=0.5),
-
-        transforms.RandomResizedCrop(
-            size=(224, 224),
-            scale=(0.8, 1.0),
-            ratio=(0.9, 1.1)
-        ),
-
-        transforms.ColorJitter(
-            brightness=0.3,
-            contrast=0.3,
-            saturation=0.2,
-            hue=0.05
-        ),
-
-        transforms.RandomRotation(degrees=5),
-
+        transforms.RandomResizedCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+        transforms.RandomRotation(10),
+        transforms.RandomAffine(degrees=5, translate=(0.05,0.05)),
         transforms.ToTensor(),
-
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        ),
+        transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
     ])
-
-    
     transform_val = transforms.Compose([
-        transforms.Resize((256, 256)),
-        transforms.CenterCrop((224, 224)),
+        transforms.Resize((224,224)),
         transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        ),
+        transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
     ])
 
     encoder = LabelEncoder(class_names=cfg["labels"]["class_names"])
-
     train_ds = VolleyballClipDataset(cfg["data"]["videos_dir"], cfg["data"]["splits"]["train"], encoder, transform_train)
     val_ds = VolleyballClipDataset(cfg["data"]["videos_dir"], cfg["data"]["splits"]["val"], encoder, transform_val)
 
     train_loader = DataLoader(train_ds, batch_size=cfg["training"]["batch_size"], shuffle=True, num_workers=cfg["training"]["num_workers"])
     val_loader = DataLoader(val_ds, batch_size=cfg["training"]["batch_size"], shuffle=False, num_workers=cfg["training"]["num_workers"])
-    
-    
-    model = ResNetB1(cfg["num_classes"]).to(device)
-    optimizer = torch.optim.AdamW(
-    filter(lambda p: p.requires_grad, model.parameters()),
-    lr=cfg["training"]["lr"],
-    weight_decay=cfg["training"]["weight_decay"])
-    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,T_max=cfg["training"]["epochs"])
 
-    labels = [label for _, label in train_ds]
-    labels = np.array(labels)
+    model = ResNetB1(cfg["num_classes"])
+    model = model.to(device)
 
-    class_counts = np.bincount(labels)
-    class_weights = 1.0 / class_counts
-    class_weights = class_weights / class_weights.sum() * len(class_counts)
+    for name, param in model.named_parameters():
+        if "layer3" in name or "layer4" in name or "classifier" in name:
+            param.requires_grad = True
+        else:
+            param.requires_grad = False
 
-    class_weights = torch.tensor(class_weights, dtype=torch.float).to(device)
-    criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
+    total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    logger.info(f"Number of trainable params: {total_trainable_params}")
 
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=5e-5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=3, verbose=True)
 
-    start_mlflow(cfg["experiment"]["name"], cfg["output"]["mlruns_dir"])
-    log_params({
-        "epochs": cfg["training"]["epochs"],
-        "batch_size": cfg["training"]["batch_size"],
-        "lr": cfg["training"]["lr"],
-        "optimizer": cfg["training"]["optimizer"],
-        "weight_decay": cfg["training"]["weight_decay"]
-    })
+    # Try to load previous checkpoint, ignore classifier mismatch
+    checkpoint_path = os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")
+    if os.path.exists(checkpoint_path):
+        state_dict = torch.load(checkpoint_path)
+        new_state_dict = {}
+        for k, v in state_dict.items():
+            if k.startswith("model."):
+                new_state_dict[k[6:]] = v
+            else:
+                new_state_dict[k] = v
+        model.load_state_dict(new_state_dict, strict=False)
+        logger.info(f"Loaded checkpoint from {checkpoint_path}")
 
-    best_val_f1 = float('-inf')
-    best_ckpt = os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")
-    early_stop_counter = 0
+    best_val_f1 = 0.0
     patience = 7
-
+    early_stop_counter = 0
     train_loss_history, val_f1_history = [], []
 
     for epoch in range(cfg["training"]["epochs"]):
-        # ---- Train ----
         model.train()
-        train_preds, train_labels_epoch = [], []
         train_loss = 0.0
+        train_preds, train_labels = [], []
 
         for imgs, labels in train_loader:
             imgs, labels = imgs.to(device), labels.to(device)
@@ -162,89 +97,59 @@ def train_b1(cfg):
             optimizer.step()
 
             train_loss += loss.item()
-            train_preds.extend(torch.argmax(outputs, 1).cpu().tolist())
-            train_labels_epoch.extend(labels.cpu().tolist())
+            train_preds.extend(torch.argmax(outputs,1).cpu().tolist())
+            train_labels.extend(labels.cpu().tolist())
 
         train_loss /= len(train_loader)
-        train_f1 = f1_score(train_labels_epoch, train_preds, average="macro")
-        train_acc = accuracy_score(train_labels_epoch, train_preds)
+        train_f1 = f1_score(train_labels, train_preds, average="macro")
+        train_loss_history.append(train_loss)
 
         model.eval()
         val_preds, val_labels = [], []
-
         with torch.no_grad():
             for imgs, labels in val_loader:
                 imgs, labels = imgs.to(device), labels.to(device)
                 outputs = model(imgs)
-                preds = torch.argmax(outputs, 1)
+                preds = torch.argmax(outputs,1)
                 val_preds.extend(preds.cpu().tolist())
                 val_labels.extend(labels.cpu().tolist())
 
         val_f1 = f1_score(val_labels, val_preds, average="macro")
-        val_acc = accuracy_score(val_labels, val_preds)
+        val_f1_history.append(val_f1)
+        scheduler.step(val_f1)
 
-        writer.add_scalar("Loss/train", train_loss, epoch)
-        writer.add_scalar("F1/train", train_f1, epoch)
-        writer.add_scalar("F1/val", val_f1, epoch)
-        log_metrics({
-            "train_loss": train_loss,
-            "train_f1": train_f1,
-            "train_acc": train_acc,
-            "val_f1": val_f1,
-            "val_acc": val_acc
-        }, step=epoch)
         logger.info(f"[Epoch {epoch+1}/{cfg['training']['epochs']}] Train F1: {train_f1:.4f} | Val F1: {val_f1:.4f}")
 
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
-            torch.save(model.state_dict(), best_ckpt)
+            torch.save(model.state_dict(), os.path.join(cfg["output"]["checkpoints_dir"], "best.pt"))
             early_stop_counter = 0
         else:
             early_stop_counter += 1
 
         if early_stop_counter >= patience:
-            logger.info(f"No improvement for {patience} epochs. Stopping early.")
+            logger.info(f"No improvement for {patience} epochs. Early stopping.")
             break
 
-        scheduler.step()
-        train_loss_history.append(train_loss)
-        val_f1_history.append(val_f1)
-
-    model.load_state_dict(torch.load(best_ckpt, map_location=device))
+    model.load_state_dict(torch.load(os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")), strict=False)
     model.eval()
-    final_preds, final_labels = [], []
 
+    final_preds, final_labels = [], []
     with torch.no_grad():
         for imgs, labels in val_loader:
             imgs, labels = imgs.to(device), labels.to(device)
             outputs = model(imgs)
-            preds = torch.argmax(outputs, 1)
+            preds = torch.argmax(outputs,1)
             final_preds.extend(preds.cpu().tolist())
             final_labels.extend(labels.cpu().tolist())
 
     classes = encoder.classes_
-    report = classification_report(final_labels, final_preds, labels=list(range(len(classes))), target_names=classes)
+    report = classification_report(final_labels, final_preds, labels=list(range(len(classes))), target_names=classes)    
     logger.info("Final Validation Classification Report:\n" + report)
 
-    with open(os.path.join(cfg["output"]["results_dir"], "tables", "classification_report_val.txt"), "w") as f:
-        f.write(report)
-
-    plot_confusion_matrix(
-        final_labels,
-        final_preds,
-        classes,
-        title="Validation Confusion Matrix",
-        save_path=os.path.join(cfg["output"]["results_dir"], "plots", "confusion_matrix_val_final.png"))
-
-    csv_path = os.path.join(cfg["output"]["results_dir"], "tables", "B1_train_metrics.csv")
-    with open(csv_path, "w", newline="") as f:
-        writer_csv = csv.writer(f)
-        writer_csv.writerow(["metric", "value"])
-        writer_csv.writerow(["best_val_f1", best_val_f1])
-
-    plot_train_loss(train_loss_history, os.path.join(cfg["output"]["results_dir"], "plots", "train_loss_curve.png"))
-    plot_val_f1(val_f1_history, os.path.join(cfg["output"]["results_dir"], "plots", "val_f1_curve.png"))
+    plot_confusion_matrix(final_labels, final_preds, encoder.classes_, save_path=os.path.join(cfg["output"]["results_dir"], "confusion_matrix_val.png"))
+    plot_train_loss(train_loss_history, os.path.join(cfg["output"]["results_dir"], "train_loss_curve.png"))
+    plot_val_f1(val_f1_history, os.path.join(cfg["output"]["results_dir"], "val_f1_curve.png"))
 
     writer.close()
-    end_mlflow()
     logger.info("Training completed successfully.")
