@@ -63,7 +63,7 @@ def train_b1(cfg):
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=5e-5)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=3, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=3)
 
     # Try to load previous checkpoint, ignore classifier mismatch
     checkpoint_path = os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")
