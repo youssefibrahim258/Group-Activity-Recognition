@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from sklearn.metrics import f1_score, accuracy_score, classification_report
+from sklearn.metrics import f1_score, classification_report
 from torch.utils.tensorboard import SummaryWriter
 
 from src.datasets.volleyball_clip_dataset import VolleyballClipDataset
@@ -17,9 +17,11 @@ def train_b1(cfg):
     set_seed(cfg.get("seed", 42))
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
+    # ===== Directories =====
     os.makedirs(cfg["output"]["checkpoints_dir"], exist_ok=True)
     os.makedirs(cfg["output"]["results_dir"], exist_ok=True)
     os.makedirs(os.path.join(cfg["output"]["results_dir"], "tensorboard"), exist_ok=True)
+    os.makedirs(os.path.join(cfg["output"]["results_dir"], "plots"), exist_ok=True)
 
     logger = setup_logger(os.path.join(cfg["output"]["results_dir"], "logs"), "train")
     writer = SummaryWriter(log_dir=os.path.join(cfg["output"]["results_dir"], "tensorboard"))
@@ -27,11 +29,14 @@ def train_b1(cfg):
     logger.info(f"Starting training: {cfg['baseline']}")
     logger.info(f"Using device: {device}")
 
+    # ===== Augmentations =====
     transform_train = transforms.Compose([
         transforms.RandomResizedCrop((224,224)),
-        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomHorizontalFlip(0.5),
         transforms.RandomRotation(10),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
         transforms.ToTensor(),
+        transforms.RandomErasing(p=0.1),
         transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
     ])
     transform_val = transforms.Compose([
@@ -40,6 +45,7 @@ def train_b1(cfg):
         transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
     ])
 
+    # ===== Dataset & DataLoader =====
     encoder = LabelEncoder(class_names=cfg["labels"]["class_names"])
     train_ds = VolleyballClipDataset(cfg["data"]["videos_dir"], cfg["data"]["splits"]["train"], encoder, transform_train)
     val_ds = VolleyballClipDataset(cfg["data"]["videos_dir"], cfg["data"]["splits"]["val"], encoder, transform_val)
@@ -47,39 +53,22 @@ def train_b1(cfg):
     train_loader = DataLoader(train_ds, batch_size=cfg["training"]["batch_size"], shuffle=True, num_workers=cfg["training"]["num_workers"])
     val_loader = DataLoader(val_ds, batch_size=cfg["training"]["batch_size"], shuffle=False, num_workers=cfg["training"]["num_workers"])
 
-    model = ResNetB1()
-    model = model.to(device)
-
-    # for name, param in model.named_parameters():
-    #     if "layer3" in name or "layer4" in name or "classifier" in name:
-    #         param.requires_grad = True
-    #     else:
-    #         param.requires_grad = False
+    # ===== Model =====
+    model = ResNetB1().to(device)
 
     total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logger.info(f"Number of trainable params: {total_trainable_params}")
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=5e-5)
+    # ===== Loss, Optimizer, Scheduler =====
+    criterion = nn.CrossEntropyLoss()  # بدون Weighted Loss
+    optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=cfg["training"]["lr"])
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=3)
 
-    # Try to load previous checkpoint, ignore classifier mismatch
-    # checkpoint_path = os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")
-    # if os.path.exists(checkpoint_path):
-    #     state_dict = torch.load(checkpoint_path)
-    #     new_state_dict = {}
-    #     for k, v in state_dict.items():
-    #         if k.startswith("model."):
-    #             new_state_dict[k[6:]] = v
-    #         else:
-    #             new_state_dict[k] = v
-    #     model.load_state_dict(new_state_dict, strict=False)
-    #     logger.info(f"Loaded checkpoint from {checkpoint_path}")
-
+    # ===== Training loop =====
     best_val_f1 = float('-inf')
-    patience = 7
+    patience = cfg["training"].get("patience", 7)
     early_stop_counter = 0
-    train_loss_history, val_f1_history = [], []
+    train_loss_history, val_loss_history, val_f1_history = [], [], []
 
     for epoch in range(cfg["training"]["epochs"]):
         model.train()
@@ -102,22 +91,39 @@ def train_b1(cfg):
         train_f1 = f1_score(train_labels, train_preds, average="macro")
         train_loss_history.append(train_loss)
 
+        # ===== Validation =====
         model.eval()
         val_preds, val_labels = [], []
+        val_loss = 0.0
         with torch.no_grad():
             for imgs, labels in val_loader:
                 imgs, labels = imgs.to(device), labels.to(device)
                 outputs = model(imgs)
+                loss = criterion(outputs, labels)
+                val_loss += loss.item()
                 preds = torch.argmax(outputs,1)
                 val_preds.extend(preds.cpu().tolist())
                 val_labels.extend(labels.cpu().tolist())
 
+        val_loss /= len(val_loader)
         val_f1 = f1_score(val_labels, val_preds, average="macro")
+        val_loss_history.append(val_loss)
         val_f1_history.append(val_f1)
         scheduler.step(val_f1)
 
-        logger.info(f"[Epoch {epoch+1}/{cfg['training']['epochs']}] Train F1: {train_f1:.4f} | Val F1: {val_f1:.4f}")
+        # ===== Logging =====
+        logger.info(
+            f"[Epoch {epoch+1}/{cfg['training']['epochs']}] "
+            f"Train Loss: {train_loss:.4f} | Train F1: {train_f1:.4f} | "
+            f"Val Loss: {val_loss:.4f} | Val F1: {val_f1:.4f}"
+        )
 
+        writer.add_scalar("Loss/Train", train_loss, epoch)
+        writer.add_scalar("Loss/Val", val_loss, epoch)
+        writer.add_scalar("F1/Train", train_f1, epoch)
+        writer.add_scalar("F1/Val", val_f1, epoch)
+
+        # ===== Early stopping =====
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
             torch.save(model.state_dict(), os.path.join(cfg["output"]["checkpoints_dir"], "best.pt"))
@@ -129,6 +135,7 @@ def train_b1(cfg):
             logger.info(f"No improvement for {patience} epochs. Early stopping.")
             break
 
+    # ===== Final evaluation =====
     model.load_state_dict(torch.load(os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")), strict=False)
     model.eval()
 
@@ -142,9 +149,10 @@ def train_b1(cfg):
             final_labels.extend(labels.cpu().tolist())
 
     classes = encoder.classes_
-    report = classification_report(final_labels, final_preds, labels=list(range(len(classes))), target_names=classes)    
+    report = classification_report(final_labels, final_preds, labels=list(range(len(classes))), target_names=classes)
     logger.info("Final Validation Classification Report:\n" + report)
 
+    # ===== Plots =====
     plot_confusion_matrix(final_labels, final_preds, encoder.classes_, save_path=os.path.join(cfg["output"]["results_dir"],"plots", "confusion_matrix_val.png"))
     plot_train_loss(train_loss_history, os.path.join(cfg["output"]["results_dir"],"plots", "train_loss_curve.png"))
     plot_val_f1(val_f1_history, os.path.join(cfg["output"]["results_dir"],"plots", "val_f1_curve.png"))

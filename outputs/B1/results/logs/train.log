@@ -1,0 +1,49 @@
+2026-01-05 11:42:37,680 [INFO] Starting training: B1
+2026-01-05 11:42:37,680 [INFO] Using device: cuda
+2026-01-05 11:42:38,502 [INFO] Number of trainable params: 14981128
+2026-01-05 11:45:45,036 [INFO] Starting training: B1
+2026-01-05 11:45:45,036 [INFO] Using device: cuda
+2026-01-05 11:45:45,719 [INFO] Number of trainable params: 14981128
+2026-01-05 11:45:46,139 [INFO] [Epoch 1/3] Train Loss: 2.4244 | Train F1: 0.0000 | Val Loss: 2.4254 | Val F1: 0.0000
+2026-01-05 11:45:46,340 [INFO] [Epoch 2/3] Train Loss: 2.2611 | Train F1: 0.0000 | Val Loss: 2.4602 | Val F1: 0.0000
+2026-01-05 11:45:46,458 [INFO] [Epoch 3/3] Train Loss: 2.3590 | Train F1: 0.0000 | Val Loss: 2.4916 | Val F1: 0.0000
+2026-01-05 11:45:46,558 [INFO] Final Validation Classification Report:
+              precision    recall  f1-score   support
+
+       r_set       0.00      0.00      0.00       0.0
+     r_spike       0.00      0.00      0.00       0.0
+      r-pass       0.00      0.00      0.00       1.0
+  r_winpoint       0.00      0.00      0.00       0.0
+  l_winpoint       0.00      0.00      0.00       0.0
+      l-pass       0.00      0.00      0.00       0.0
+     l-spike       0.00      0.00      0.00       0.0
+       l_set       0.00      0.00      0.00       1.0
+
+   micro avg       0.00      0.00      0.00       2.0
+   macro avg       0.00      0.00      0.00       2.0
+weighted avg       0.00      0.00      0.00       2.0
+
+2026-01-05 11:45:46,802 [INFO] Training completed successfully.
+2026-01-05 13:00:16,604 [INFO] Starting training: B1
+2026-01-05 13:00:16,604 [INFO] Using device: cuda
+2026-01-05 13:00:17,955 [INFO] Number of trainable params: 14981128
+2026-01-05 13:00:19,122 [INFO] [Epoch 1/3] Train Loss: 2.4244 | Train F1: 0.0000 | Val Loss: 2.4254 | Val F1: 0.0000
+2026-01-05 13:00:19,372 [INFO] [Epoch 2/3] Train Loss: 2.2611 | Train F1: 0.0000 | Val Loss: 2.4602 | Val F1: 0.0000
+2026-01-05 13:00:19,497 [INFO] [Epoch 3/3] Train Loss: 2.3590 | Train F1: 0.0000 | Val Loss: 2.4916 | Val F1: 0.0000
+2026-01-05 13:00:19,621 [INFO] Final Validation Classification Report:
+              precision    recall  f1-score   support
+
+       r_set       0.00      0.00      0.00       0.0
+     r_spike       0.00      0.00      0.00       0.0
+      r-pass       0.00      0.00      0.00       1.0
+  r_winpoint       0.00      0.00      0.00       0.0
+  l_winpoint       0.00      0.00      0.00       0.0
+      l-pass       0.00      0.00      0.00       0.0
+     l-spike       0.00      0.00      0.00       0.0
+       l_set       0.00      0.00      0.00       1.0
+
+   micro avg       0.00      0.00      0.00       2.0
+   macro avg       0.00      0.00      0.00       2.0
+weighted avg       0.00      0.00      0.00       2.0
+
+2026-01-05 13:00:20,029 [INFO] Training completed successfully.
