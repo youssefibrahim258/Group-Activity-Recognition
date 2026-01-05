@@ -27,17 +27,18 @@ def main():
 
     print("Dataset size:", len(dataset))
 
-    image, label_id = dataset[0]
-    label_name = encoder.decode(label_id)
+    image1, label_id1,img_path = dataset[0]
+    label_name = encoder.decode(label_id1)
 
-    print("Label id:", label_id)
+    print("Label id:", label_id1)
     print("Label name:", label_name)
+    print(img_path)
 
-    img = image.permute(1, 2, 0)
-    plt.imshow(img)
-    plt.title(f"Class: {label_name}")
-    plt.axis("off")
-    plt.show()
+    # img = image.permute(1, 2, 0)
+    # plt.imshow(img)
+    # plt.title(f"Class: {label_name}")
+    # plt.axis("off")
+    # plt.show()
 
 
 if __name__ == "__main__":

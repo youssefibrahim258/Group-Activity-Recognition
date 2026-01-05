@@ -58,7 +58,7 @@ def eval_b1(cfg):
     new_state_dict = {}
     for k, v in state_dict.items():
         if k.startswith("model."):
-            new_state_dict[k[6:]] = v  # إزالة "model."
+            new_state_dict[k[6:]] = v  
     else:
         new_state_dict[k] = v
 

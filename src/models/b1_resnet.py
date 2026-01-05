@@ -1,16 +1,26 @@
 import torchvision.models as models
 import torch.nn as nn
-import torch
+
+num_classes = 8
 
 class ResNetB1(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes=8):
         super().__init__()
-        base_model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
-        self.backbone = nn.Sequential(*list(base_model.children())[:-1])  # all layers except final fc
-        self.classifier = nn.Linear(base_model.fc.in_features, num_classes)
+
+        self.model = models.resnet50(
+            weights=models.ResNet50_Weights.IMAGENET1K_V1
+        )
+
+        for param in self.model.parameters():
+            param.requires_grad = False
+
+        for param in self.model.layer4.parameters():
+            param.requires_grad = True
+
+        self.model.fc = nn.Linear(
+            self.model.fc.in_features, num_classes
+        )
 
     def forward(self, x):
-        x = self.backbone(x)
-        x = torch.flatten(x, 1)
-        x = self.classifier(x)
-        return x
+        return self.model(x)
+

@@ -28,11 +28,9 @@ def train_b1(cfg):
     logger.info(f"Using device: {device}")
 
     transform_train = transforms.Compose([
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+        transforms.RandomResizedCrop((224,224)),
+        transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomRotation(10),
-        transforms.RandomAffine(degrees=5, translate=(0.05,0.05)),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
     ])
@@ -49,14 +47,14 @@ def train_b1(cfg):
     train_loader = DataLoader(train_ds, batch_size=cfg["training"]["batch_size"], shuffle=True, num_workers=cfg["training"]["num_workers"])
     val_loader = DataLoader(val_ds, batch_size=cfg["training"]["batch_size"], shuffle=False, num_workers=cfg["training"]["num_workers"])
 
-    model = ResNetB1(cfg["num_classes"])
+    model = ResNetB1()
     model = model.to(device)
 
-    for name, param in model.named_parameters():
-        if "layer3" in name or "layer4" in name or "classifier" in name:
-            param.requires_grad = True
-        else:
-            param.requires_grad = False
+    # for name, param in model.named_parameters():
+    #     if "layer3" in name or "layer4" in name or "classifier" in name:
+    #         param.requires_grad = True
+    #     else:
+    #         param.requires_grad = False
 
     total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logger.info(f"Number of trainable params: {total_trainable_params}")
@@ -66,19 +64,19 @@ def train_b1(cfg):
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=3)
 
     # Try to load previous checkpoint, ignore classifier mismatch
-    checkpoint_path = os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")
-    if os.path.exists(checkpoint_path):
-        state_dict = torch.load(checkpoint_path)
-        new_state_dict = {}
-        for k, v in state_dict.items():
-            if k.startswith("model."):
-                new_state_dict[k[6:]] = v
-            else:
-                new_state_dict[k] = v
-        model.load_state_dict(new_state_dict, strict=False)
-        logger.info(f"Loaded checkpoint from {checkpoint_path}")
+    # checkpoint_path = os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")
+    # if os.path.exists(checkpoint_path):
+    #     state_dict = torch.load(checkpoint_path)
+    #     new_state_dict = {}
+    #     for k, v in state_dict.items():
+    #         if k.startswith("model."):
+    #             new_state_dict[k[6:]] = v
+    #         else:
+    #             new_state_dict[k] = v
+    #     model.load_state_dict(new_state_dict, strict=False)
+    #     logger.info(f"Loaded checkpoint from {checkpoint_path}")
 
-    best_val_f1 = 0.0
+    best_val_f1 = float('-inf')
     patience = 7
     early_stop_counter = 0
     train_loss_history, val_f1_history = [], []
@@ -147,9 +145,9 @@ def train_b1(cfg):
     report = classification_report(final_labels, final_preds, labels=list(range(len(classes))), target_names=classes)    
     logger.info("Final Validation Classification Report:\n" + report)
 
-    plot_confusion_matrix(final_labels, final_preds, encoder.classes_, save_path=os.path.join(cfg["output"]["results_dir"], "confusion_matrix_val.png"))
-    plot_train_loss(train_loss_history, os.path.join(cfg["output"]["results_dir"], "train_loss_curve.png"))
-    plot_val_f1(val_f1_history, os.path.join(cfg["output"]["results_dir"], "val_f1_curve.png"))
+    plot_confusion_matrix(final_labels, final_preds, encoder.classes_, save_path=os.path.join(cfg["output"]["results_dir"],"plots", "confusion_matrix_val.png"))
+    plot_train_loss(train_loss_history, os.path.join(cfg["output"]["results_dir"],"plots", "train_loss_curve.png"))
+    plot_val_f1(val_f1_history, os.path.join(cfg["output"]["results_dir"],"plots", "val_f1_curve.png"))
 
     writer.close()
     logger.info("Training completed successfully.")
