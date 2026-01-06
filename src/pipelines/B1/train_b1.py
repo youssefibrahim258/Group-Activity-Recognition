@@ -6,12 +6,13 @@ from torchvision import transforms
 from sklearn.metrics import f1_score, classification_report
 from torch.utils.tensorboard import SummaryWriter
 
-from src.datasets.volleyball_clip_dataset import VolleyballClipDataset
+from src.datasets.volleyball_clip_dataset import VolleyballClip9FramesDataset
 from src.models.b1_resnet import ResNetB1
 from src.utils.label_encoder import LabelEncoder
 from src.utils.set_seed import set_seed
 from src.utils.logger import setup_logger
 from src.utils.plots import plot_confusion_matrix, plot_train_loss, plot_val_f1
+
 
 def train_b1(cfg):
     set_seed(cfg.get("seed", 42))
@@ -31,43 +32,76 @@ def train_b1(cfg):
 
     # ===== Augmentations =====
     transform_train = transforms.Compose([
-        transforms.RandomResizedCrop((224,224)),
+        transforms.RandomResizedCrop((224, 224)),
         transforms.RandomHorizontalFlip(0.5),
         transforms.RandomRotation(10),
         transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
         transforms.ToTensor(),
         transforms.RandomErasing(p=0.1),
-        transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
+        transforms.Normalize([0.485, 0.456, 0.406],
+                             [0.229, 0.224, 0.225])
     ])
+
     transform_val = transforms.Compose([
-        transforms.Resize((224,224)),
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
+        transforms.Normalize([0.485, 0.456, 0.406],
+                             [0.229, 0.224, 0.225])
     ])
 
     # ===== Dataset & DataLoader =====
     encoder = LabelEncoder(class_names=cfg["labels"]["class_names"])
-    train_ds = VolleyballClipDataset(cfg["data"]["videos_dir"], cfg["data"]["splits"]["train"], encoder, transform_train)
-    val_ds = VolleyballClipDataset(cfg["data"]["videos_dir"], cfg["data"]["splits"]["val"], encoder, transform_val)
 
-    train_loader = DataLoader(train_ds, batch_size=cfg["training"]["batch_size"], shuffle=True, num_workers=cfg["training"]["num_workers"])
-    val_loader = DataLoader(val_ds, batch_size=cfg["training"]["batch_size"], shuffle=False, num_workers=cfg["training"]["num_workers"])
+    train_ds = VolleyballClip9FramesDataset(
+        cfg["data"]["videos_dir"],
+        cfg["data"]["splits"]["train"],
+        encoder,
+        transform_train,
+        repeat=cfg["training"].get("repeat", 3)
+    )
+
+    val_ds = VolleyballClip9FramesDataset(
+        cfg["data"]["videos_dir"],
+        cfg["data"]["splits"]["val"],
+        encoder,
+        transform_val,
+        repeat=1
+    )
+
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=cfg["training"]["batch_size"],
+        shuffle=True,
+        num_workers=cfg["training"]["num_workers"]
+    )
+
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=cfg["training"]["batch_size"],
+        shuffle=False,
+        num_workers=cfg["training"]["num_workers"]
+    )
 
     # ===== Model =====
     model = ResNetB1().to(device)
-
     total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logger.info(f"Number of trainable params: {total_trainable_params}")
 
     # ===== Loss, Optimizer, Scheduler =====
-    criterion = nn.CrossEntropyLoss()  # بدون Weighted Loss
-    optimizer = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=cfg["training"]["lr"])
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=3)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.AdamW(
+        filter(lambda p: p.requires_grad, model.parameters()),
+        lr=cfg["training"]["lr"]
+    )
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode="max", factor=0.5, patience=3
+    )
 
     # ===== Training loop =====
-    best_val_f1 = float('-inf')
+    best_val_f1 = float("-inf")
     patience = cfg["training"].get("patience", 7)
     early_stop_counter = 0
+
     train_loss_history, val_loss_history, val_f1_history = [], [], []
 
     for epoch in range(cfg["training"]["epochs"]):
@@ -76,7 +110,9 @@ def train_b1(cfg):
         train_preds, train_labels = [], []
 
         for imgs, labels in train_loader:
-            imgs, labels = imgs.to(device), labels.to(device)
+            imgs = imgs.to(device)          # (B, C, H, W)
+            labels = labels.to(device)
+
             optimizer.zero_grad()
             outputs = model(imgs)
             loss = criterion(outputs, labels)
@@ -84,7 +120,7 @@ def train_b1(cfg):
             optimizer.step()
 
             train_loss += loss.item()
-            train_preds.extend(torch.argmax(outputs,1).cpu().tolist())
+            train_preds.extend(torch.argmax(outputs, 1).cpu().tolist())
             train_labels.extend(labels.cpu().tolist())
 
         train_loss /= len(train_loader)
@@ -93,20 +129,23 @@ def train_b1(cfg):
 
         # ===== Validation =====
         model.eval()
-        val_preds, val_labels = [], []
         val_loss = 0.0
+        val_preds, val_labels = [], []
+
         with torch.no_grad():
             for imgs, labels in val_loader:
-                imgs, labels = imgs.to(device), labels.to(device)
+                imgs = imgs.to(device)
+                labels = labels.to(device)
                 outputs = model(imgs)
                 loss = criterion(outputs, labels)
+
                 val_loss += loss.item()
-                preds = torch.argmax(outputs,1)
-                val_preds.extend(preds.cpu().tolist())
+                val_preds.extend(torch.argmax(outputs, 1).cpu().tolist())
                 val_labels.extend(labels.cpu().tolist())
 
         val_loss /= len(val_loader)
         val_f1 = f1_score(val_labels, val_preds, average="macro")
+
         val_loss_history.append(val_loss)
         val_f1_history.append(val_f1)
         scheduler.step(val_f1)
@@ -126,7 +165,10 @@ def train_b1(cfg):
         # ===== Early stopping =====
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
-            torch.save(model.state_dict(), os.path.join(cfg["output"]["checkpoints_dir"], "best.pt"))
+            torch.save(
+                model.state_dict(),
+                os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")
+            )
             early_stop_counter = 0
         else:
             early_stop_counter += 1
@@ -136,26 +178,45 @@ def train_b1(cfg):
             break
 
     # ===== Final evaluation =====
-    model.load_state_dict(torch.load(os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")), strict=False)
+    model.load_state_dict(
+        torch.load(os.path.join(cfg["output"]["checkpoints_dir"], "best.pt")),
+        strict=False
+    )
     model.eval()
 
     final_preds, final_labels = [], []
     with torch.no_grad():
         for imgs, labels in val_loader:
-            imgs, labels = imgs.to(device), labels.to(device)
+            imgs = imgs.to(device)
+            labels = labels.to(device)
             outputs = model(imgs)
-            preds = torch.argmax(outputs,1)
-            final_preds.extend(preds.cpu().tolist())
+            final_preds.extend(torch.argmax(outputs, 1).cpu().tolist())
             final_labels.extend(labels.cpu().tolist())
 
     classes = encoder.classes_
-    report = classification_report(final_labels, final_preds, labels=list(range(len(classes))), target_names=classes)
+    report = classification_report(
+        final_labels,
+        final_preds,
+        labels=list(range(len(classes))),
+        target_names=classes
+    )
     logger.info("Final Validation Classification Report:\n" + report)
 
     # ===== Plots =====
-    plot_confusion_matrix(final_labels, final_preds, encoder.classes_, save_path=os.path.join(cfg["output"]["results_dir"],"plots", "confusion_matrix_val.png"))
-    plot_train_loss(train_loss_history, os.path.join(cfg["output"]["results_dir"],"plots", "train_loss_curve.png"))
-    plot_val_f1(val_f1_history, os.path.join(cfg["output"]["results_dir"],"plots", "val_f1_curve.png"))
+    plot_confusion_matrix(
+        final_labels,
+        final_preds,
+        classes,
+        save_path=os.path.join(cfg["output"]["results_dir"], "plots", "confusion_matrix_val.png")
+    )
+    plot_train_loss(
+        train_loss_history,
+        os.path.join(cfg["output"]["results_dir"], "plots", "train_loss_curve.png")
+    )
+    plot_val_f1(
+        val_f1_history,
+        os.path.join(cfg["output"]["results_dir"], "plots", "val_f1_curve.png")
+    )
 
     writer.close()
     logger.info("Training completed successfully.")
