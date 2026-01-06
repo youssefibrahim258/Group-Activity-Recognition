@@ -53,7 +53,7 @@ def train_b1(cfg):
     encoder = LabelEncoder(class_names=cfg["labels"]["class_names"])
 
     videos_root = os.path.join(cfg["data"]["videos_dir"], "videos")
-    pickle_file = os.path.join(cfg["data"]["videos_dir"], "annot_all.pkl")
+    pickle_file = cfg["data"]["annot_file"]
 
     # Train Dataset
     train_dataset = VolleyballB1Dataset(

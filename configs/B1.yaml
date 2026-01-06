@@ -8,6 +8,7 @@ experiment:
   version: 1
 
 data:
+  annot_file: data_set/annot_all.pkl
   videos_dir: data_set
   splits:
     train: [7, 10]

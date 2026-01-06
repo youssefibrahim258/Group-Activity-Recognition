@@ -4,9 +4,7 @@ import pickle
 from typing import List
 from src.utils_data.boxinfo import BoxInfo
 
-
-
-dataset_root = 'data_set'
+dataset_root = "/kaggle/working/Group-Activity-Recognition"
 
 def load_tracking_annot(path):
     with open(path, 'r') as file:
@@ -111,15 +109,13 @@ def load_volleyball_dataset(videos_root, annot_root):
 
     return videos_annot
 
-
 def create_pkl_version():
-    # You can use this function to create and save pkl version of the dataset
     videos_root = f'{dataset_root}/videos'
     annot_root = f'{dataset_root}/volleyball_tracking_annotation'
 
     videos_annot = load_volleyball_dataset(videos_root, annot_root)
 
-    with open(f'{dataset_root}/annot_all.pkl', 'wb') as file:
+    with open('/kaggle/working/annot_all.pkl', 'wb') as file:
         pickle.dump(videos_annot, file)
 
 
