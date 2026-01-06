@@ -44,14 +44,14 @@ def eval_b1(cfg):
         cfg["data"]["splits"]["test"],
         encoder,
         transform,
-        repeat=1
     )
 
     test_loader = DataLoader(
         test_ds,
         batch_size=cfg["training"]["batch_size"],
         shuffle=False,
-        num_workers=cfg["training"]["num_workers"]
+        num_workers=2,
+        pin_memory=True
     )
 
     # ===== Model =====

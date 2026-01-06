@@ -57,7 +57,6 @@ def train_b1(cfg):
         cfg["data"]["splits"]["train"],
         encoder,
         transform_train,
-        repeat=cfg["training"].get("repeat", 3)
     )
 
     val_ds = VolleyballClip9FramesDataset(
@@ -65,21 +64,22 @@ def train_b1(cfg):
         cfg["data"]["splits"]["val"],
         encoder,
         transform_val,
-        repeat=1
     )
 
     train_loader = DataLoader(
         train_ds,
         batch_size=cfg["training"]["batch_size"],
         shuffle=True,
-        num_workers=cfg["training"]["num_workers"]
+        num_workers=cfg["training"]["num_workers"],
+        pin_memory=True
     )
 
     val_loader = DataLoader(
         val_ds,
         batch_size=cfg["training"]["batch_size"],
         shuffle=False,
-        num_workers=cfg["training"]["num_workers"]
+        num_workers=2,
+        pin_memory=True
     )
 
     # ===== Model =====

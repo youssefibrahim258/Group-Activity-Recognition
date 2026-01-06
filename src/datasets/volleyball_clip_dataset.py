@@ -12,8 +12,7 @@ class VolleyballClip9FramesDataset(Dataset):
         label_encoder,
         transform=None,
         num_frames_before=4,
-        num_frames_after=4,
-        repeat=1
+        num_frames_after=4
     ):
         """
         Each clip -> 9 independent frame samples (non-temporal)
@@ -48,8 +47,7 @@ class VolleyballClip9FramesDataset(Dataset):
                 # كل فريم = sample مستقل
                 for frame_name in selected_frames:
                     frame_path = os.path.join(clip_dir, frame_name)
-                    for _ in range(repeat):
-                        self.samples.append((frame_path, label_str))
+                    self.samples.append((frame_path, label_str))
 
     def __len__(self):
         return len(self.samples)
