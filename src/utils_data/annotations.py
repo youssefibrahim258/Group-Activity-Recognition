@@ -4,7 +4,7 @@ import pickle
 from typing import List
 from src.utils_data.boxinfo import BoxInfo
 
-dataset_root = "/kaggle/working/Group-Activity-Recognition"
+dataset_root = "/kaggle/input/group-activity-recognition-volleyball"
 
 def load_tracking_annot(path):
     with open(path, 'r') as file:
