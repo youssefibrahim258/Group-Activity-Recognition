@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from sklearn.metrics import f1_score, accuracy_score, classification_report
 
-from src.datasets.volleyball_clip_dataset import VolleyballClip9FramesDataset
+from src.datasets.volleyball_clip_dataset import VolleyballB1Dataset
 from src.models.b1_resnet import ResNetB1
 from src.utils.label_encoder import LabelEncoder
 from src.utils.plots import plot_confusion_matrix
@@ -35,15 +35,19 @@ def eval_b1(cfg):
             [0.229, 0.224, 0.225]
         )
     ])
+    encoder = LabelEncoder(class_names=cfg["labels"]["class_names"])
 
     # ===== Dataset & Loader =====
-    encoder = LabelEncoder(cfg["labels"]["class_names"])
+    videos_root = os.path.join(cfg["data"]["videos_dir"], "videos")
+    pickle_file = os.path.join(cfg["data"]["videos_dir"], "annot_all.pkl")
 
-    test_ds = VolleyballClip9FramesDataset(
-        cfg["data"]["videos_dir"],
-        cfg["data"]["splits"]["test"],
-        encoder,
-        transform,
+    # Train Dataset
+    test_ds = VolleyballB1Dataset(
+        pickle_file,
+        videos_root,
+        video_list=[str(v) for v in cfg["data"]["splits"]["test"]],
+        encoder=encoder,
+        transform=transform
     )
 
     test_loader = DataLoader(

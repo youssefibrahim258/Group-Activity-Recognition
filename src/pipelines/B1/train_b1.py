@@ -6,7 +6,7 @@ from torchvision import transforms
 from sklearn.metrics import f1_score, classification_report
 from torch.utils.tensorboard import SummaryWriter
 
-from src.datasets.volleyball_clip_dataset import VolleyballClip9FramesDataset
+from src.datasets.volleyball_clip_dataset import VolleyballB1Dataset
 from src.models.b1_resnet import ResNetB1
 from src.utils.label_encoder import LabelEncoder
 from src.utils.set_seed import set_seed
@@ -36,11 +36,11 @@ def train_b1(cfg):
         transforms.RandomHorizontalFlip(0.5),
         transforms.RandomRotation(10),
         transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        transforms.RandomPerspective(distortion_scale=0.2, p=0.3),
         transforms.ToTensor(),
         transforms.RandomErasing(p=0.1),
         transforms.Normalize([0.485, 0.456, 0.406],
-                             [0.229, 0.224, 0.225])
-    ])
+                            [0.229, 0.224, 0.225])])
 
     transform_val = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -52,22 +52,29 @@ def train_b1(cfg):
     # ===== Dataset & DataLoader =====
     encoder = LabelEncoder(class_names=cfg["labels"]["class_names"])
 
-    train_ds = VolleyballClip9FramesDataset(
-        cfg["data"]["videos_dir"],
-        cfg["data"]["splits"]["train"],
-        encoder,
-        transform_train,
+    videos_root = os.path.join(cfg["data"]["videos_dir"], "videos")
+    pickle_file = os.path.join(cfg["data"]["videos_dir"], "annot_all.pkl")
+
+    # Train Dataset
+    train_dataset = VolleyballB1Dataset(
+        pickle_file,
+        videos_root,
+        video_list=[str(v) for v in cfg["data"]["splits"]["train"]],
+        encoder=encoder,
+        transform=transform_train
     )
 
-    val_ds = VolleyballClip9FramesDataset(
-        cfg["data"]["videos_dir"],
-        cfg["data"]["splits"]["val"],
-        encoder,
-        transform_val,
+    # Validation Dataset
+    val_dataset = VolleyballB1Dataset(
+        pickle_file,
+        videos_root,
+        video_list=[str(v) for v in cfg["data"]["splits"]["val"]],
+        encoder=encoder,
+        transform=transform_val
     )
 
     train_loader = DataLoader(
-        train_ds,
+        train_dataset,
         batch_size=cfg["training"]["batch_size"],
         shuffle=True,
         num_workers=cfg["training"]["num_workers"],
@@ -75,7 +82,7 @@ def train_b1(cfg):
     )
 
     val_loader = DataLoader(
-        val_ds,
+        val_dataset,
         batch_size=cfg["training"]["batch_size"],
         shuffle=False,
         num_workers=2,
@@ -94,7 +101,7 @@ def train_b1(cfg):
         lr=cfg["training"]["lr"]
     )
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="max", factor=0.5, patience=3
+        optimizer, mode="max", factor=0.5, patience=5
     )
 
     # ===== Training loop =====
@@ -110,7 +117,7 @@ def train_b1(cfg):
         train_preds, train_labels = [], []
 
         for imgs, labels in train_loader:
-            imgs = imgs.to(device)          # (B, C, H, W)
+            imgs = imgs.to(device)
             labels = labels.to(device)
 
             optimizer.zero_grad()

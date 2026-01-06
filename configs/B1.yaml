@@ -8,7 +8,7 @@ experiment:
   version: 1
 
 data:
-  videos_dir: data_set/videos_sample
+  videos_dir: data_set
   splits:
     train: [7, 10]
     val: [10]
