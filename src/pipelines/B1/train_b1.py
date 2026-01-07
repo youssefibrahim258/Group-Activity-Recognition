@@ -13,6 +13,9 @@ from src.utils.set_seed import set_seed
 from src.utils.logger import setup_logger
 from src.utils.plots import plot_confusion_matrix, plot_train_loss, plot_val_f1
 
+import matplotlib.pyplot as plt
+import torch
+
 
 def train_b1(cfg):
     set_seed(cfg.get("seed", 42))
@@ -32,22 +35,24 @@ def train_b1(cfg):
 
     # ===== Augmentations =====
     transform_train = transforms.Compose([
-        transforms.RandomResizedCrop((224, 224)),
-        transforms.RandomHorizontalFlip(0.5),
-        transforms.RandomRotation(10),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
-        transforms.RandomPerspective(distortion_scale=0.2, p=0.3),
+        transforms.RandomResizedCrop(224, scale=(0.8, 1.0), ratio=(0.9, 1.1)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.ColorJitter(brightness=0.1,contrast=0.1,saturation=0.05,hue=0.02),
         transforms.ToTensor(),
-        transforms.RandomErasing(p=0.1),
-        transforms.Normalize([0.485, 0.456, 0.406],
-                            [0.229, 0.224, 0.225])])
+        transforms.RandomErasing(p=0.05, scale=(0.02, 0.08), ratio=(0.3, 3.3)),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]),])
+
 
     transform_val = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406],
-                             [0.229, 0.224, 0.225])
-    ])
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]),])
+
 
     # ===== Dataset & DataLoader =====
     encoder = LabelEncoder(class_names=cfg["labels"]["class_names"])
@@ -78,8 +83,8 @@ def train_b1(cfg):
         batch_size=cfg["training"]["batch_size"],
         shuffle=True,
         num_workers=cfg["training"]["num_workers"],
-        pin_memory=True
-    )
+        pin_memory=True)
+
 
     val_loader = DataLoader(
         val_dataset,
@@ -88,6 +93,8 @@ def train_b1(cfg):
         num_workers=2,
         pin_memory=True
     )
+
+
 
     # ===== Model =====
     model = ResNetB1().to(device)

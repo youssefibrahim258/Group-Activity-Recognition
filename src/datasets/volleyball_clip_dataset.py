@@ -30,16 +30,6 @@ class VolleyballB1Dataset(Dataset):
     def __len__(self):
         return len(self.samples)
 
-    # def __getitem__(self, idx):
-    #     img_path, label = self.samples[idx]
-
-    #     image = Image.open(img_path).convert("RGB")
-    #     if self.transform:
-    #         image = self.transform(image)
-
-    #     label = torch.tensor(label, dtype=torch.long)  # label الآن int جاهز
-    #     return image, label
-
 
     def __getitem__(self, idx):
         img_path, label = self.samples[idx]
