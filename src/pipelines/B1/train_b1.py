@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from sklearn.metrics import f1_score, classification_report
 from torch.utils.tensorboard import SummaryWriter
+from collections import Counter
+import numpy as np
 
 from src.datasets.volleyball_clip_dataset import VolleyballB1Dataset
 from src.models.b1_resnet import ResNetB1
@@ -13,6 +15,8 @@ from src.utils.set_seed import set_seed
 from src.utils.logger import setup_logger
 from src.utils.plots import plot_confusion_matrix, plot_train_loss, plot_val_f1
 from src.utils.mixup import mixup_data, mixup_criterion
+from src.mlflow.logger import start_mlflow, log_metrics, end_mlflow
+
 
 
 import matplotlib.pyplot as plt
@@ -93,6 +97,30 @@ def train_b1(cfg):
         num_workers=0,
         pin_memory=True
     )
+# ===== Compute class weights from TRAIN data =====
+
+    train_labels_all = []
+
+    for _, label in train_dataset:
+        train_labels_all.append(label)
+
+    counter = Counter(train_labels_all)
+    num_classes = len(encoder.classes_)
+    total_samples = sum(counter.values())
+
+    class_weights = []
+
+    for i in range(num_classes):
+        if counter[i] == 0:
+            class_weights.append(0.0)
+        else:
+            class_weights.append(total_samples / (num_classes * counter[i]))
+
+    class_weights = torch.tensor(class_weights, dtype=torch.float).to(device)
+
+    logger.info(f"Class weights: {class_weights}")
+    logger.info(f"Train class distribution: {counter}")
+
 
 
 
@@ -102,12 +130,12 @@ def train_b1(cfg):
     logger.info(f"Number of trainable params: {total_trainable_params}")
 
     # ===== Loss, Optimizer, Scheduler =====
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = torch.optim.AdamW(model.parameters(),
     lr=cfg["training"]["lr"],
     weight_decay=cfg["training"]["weight_decay"])
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3)
 
 
     # ===== Training loop =====
@@ -116,6 +144,8 @@ def train_b1(cfg):
     early_stop_counter = 0
 
     train_loss_history, val_loss_history, val_f1_history = [], [], []
+    start_mlflow(cfg["baseline"], cfg["output"]["mlruns_dir"])
+
 
     for epoch in range(cfg["training"]["epochs"]):
         model.train()
@@ -176,6 +206,9 @@ def train_b1(cfg):
             f"Train Loss: {train_loss:.4f} | Train F1: {train_f1:.4f} | "
             f"Val Loss: {val_loss:.4f} | Val F1: {val_f1:.4f}"
         )
+        log_metrics({"train_loss": train_loss,"train_f1": train_f1,"val_loss": val_loss,
+                     "val_f1": val_f1}, step=epoch)
+
 
         writer.add_scalar("Loss/Train", train_loss, epoch)
         writer.add_scalar("Loss/Val", val_loss, epoch)
@@ -239,5 +272,6 @@ def train_b1(cfg):
     )
 
     writer.close()
+    end_mlflow()
     logger.info("Training completed successfully.")
 
