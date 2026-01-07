@@ -131,16 +131,26 @@ def train_b1(cfg):
 
     # ===== Loss, Optimizer, Scheduler =====
     criterion = nn.CrossEntropyLoss(weight=class_weights)
+    # optimizer = torch.optim.lr_scheduler.StepLR(
+    #         optimizer,
+    #         step_size=5,
+    #         gamma=0.1
+    #     )
     optimizer = torch.optim.AdamW(model.parameters(),
     lr=cfg["training"]["lr"],
     weight_decay=cfg["training"]["weight_decay"])
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3)
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=3)
+    scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer,
+            step_size=5,
+            gamma=0.1
+        )
 
 
     # ===== Training loop =====
     best_val_f1 = float("-inf")
-    patience = 5
+    patience = 7
     early_stop_counter = 0
 
     train_loss_history, val_loss_history, val_f1_history = [], [], []
