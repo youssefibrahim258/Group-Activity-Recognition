@@ -12,6 +12,8 @@ from src.utils.label_encoder import LabelEncoder
 from src.utils.set_seed import set_seed
 from src.utils.logger import setup_logger
 from src.utils.plots import plot_confusion_matrix, plot_train_loss, plot_val_f1
+from src.utils.mixup import mixup_data, mixup_criterion
+
 
 import matplotlib.pyplot as plt
 import torch
@@ -97,23 +99,23 @@ def train_b1(cfg):
 
 
     # ===== Model =====
-    model = ResNetB1().to(device)
+    model = ResNetB1(freeze_backbone=True).to(device)
     total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logger.info(f"Number of trainable params: {total_trainable_params}")
 
     # ===== Loss, Optimizer, Scheduler =====
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=cfg["training"]["lr"]
-    )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="max", factor=0.5, patience=5
-    )
+    filter(lambda p: p.requires_grad, model.parameters()),
+    lr=cfg["training"]["lr"],
+    weight_decay=1e-4)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.5, patience=3)
+
 
     # ===== Training loop =====
     best_val_f1 = float("-inf")
-    patience = cfg["training"].get("patience", 7)
+    patience = 5
     early_stop_counter = 0
 
     train_loss_history, val_loss_history, val_f1_history = [], [], []
@@ -128,14 +130,21 @@ def train_b1(cfg):
             labels = labels.to(device)
 
             optimizer.zero_grad()
-            outputs = model(imgs)
-            loss = criterion(outputs, labels)
+
+            # Mixup for training loss
+            imgs_mixed, targets_a, targets_b, lam = mixup_data(imgs, labels, alpha=1.0)
+            outputs_mixed = model(imgs_mixed)
+            loss = mixup_criterion(criterion, outputs_mixed, targets_a, targets_b, lam)
             loss.backward()
             optimizer.step()
 
             train_loss += loss.item()
-            train_preds.extend(torch.argmax(outputs, 1).cpu().tolist())
-            train_labels.extend(labels.cpu().tolist())
+
+            # Train F1: compute on original imgs/labels (no mixup)
+            with torch.no_grad():
+                outputs_real = model(imgs)
+                train_preds.extend(torch.argmax(outputs_real, 1).cpu().tolist())
+                train_labels.extend(labels.cpu().tolist())
 
         train_loss /= len(train_loader)
         train_f1 = f1_score(train_labels, train_preds, average="macro")
@@ -234,3 +243,4 @@ def train_b1(cfg):
 
     writer.close()
     logger.info("Training completed successfully.")
+

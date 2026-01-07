@@ -28,18 +28,18 @@ def eval_b1(cfg):
 
     # ===== Transform =====
     transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(
-            [0.485, 0.456, 0.406],
-            [0.229, 0.224, 0.225]
-        )
-    ])
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]),])
+    
     encoder = LabelEncoder(class_names=cfg["labels"]["class_names"])
 
     # ===== Dataset & Loader =====
     videos_root = os.path.join(cfg["data"]["videos_dir"], "videos")
-    pickle_file = os.path.join(cfg["data"]["videos_dir"], "annot_all.pkl")
+    pickle_file = cfg["data"]["annot_file"]
 
     # Train Dataset
     test_ds = VolleyballB1Dataset(
