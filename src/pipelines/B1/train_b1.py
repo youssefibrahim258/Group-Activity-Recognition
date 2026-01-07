@@ -34,19 +34,16 @@ def train_b1(cfg):
 
     logger.info(f"Starting training: {cfg['baseline']}")
     logger.info(f"Using device: {device}")
-
+            
 
     # ===== Augmentations =====
     transform_train = transforms.Compose([
-            transforms.RandomResizedCrop(224, scale=(0.7, 1.0), ratio=(0.9, 1.1)),
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1, hue=0.02),
-            transforms.RandomRotation(degrees=10),
+            transforms.Resize(256),
+            transforms.RandomResizedCrop(224),
+            transforms.RandomRotation(5),
             transforms.ToTensor(),
-            transforms.RandomErasing(p=0.1, scale=(0.02, 0.08), ratio=(0.3, 3.3)),
-            transforms.Normalize(
-                mean=[0.485, 0.456, 0.406],
-                std=[0.229, 0.224, 0.225])])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])])
 
 
 
@@ -93,14 +90,14 @@ def train_b1(cfg):
         val_dataset,
         batch_size=cfg["training"]["batch_size"],
         shuffle=False,
-        num_workers=2,
+        num_workers=0,
         pin_memory=True
     )
 
 
 
     # ===== Model =====
-    model = ResNetB1(freeze_backbone=True).to(device)
+    model = ResNetB1().to(device)
     total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logger.info(f"Number of trainable params: {total_trainable_params}")
 
@@ -108,7 +105,7 @@ def train_b1(cfg):
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(),
     lr=cfg["training"]["lr"],
-    weight_decay=1e-4)
+    weight_decay=cfg["training"]["weight_decay"])
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
 

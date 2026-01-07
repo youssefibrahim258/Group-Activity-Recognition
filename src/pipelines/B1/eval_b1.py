@@ -52,7 +52,7 @@ def eval_b1(cfg):
         test_ds,
         batch_size=cfg["training"]["batch_size"],
         shuffle=False,
-        num_workers=2,
+        num_workers=0,
         pin_memory=True
     )
 

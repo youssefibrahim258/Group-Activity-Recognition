@@ -33,6 +33,7 @@ training:
   optimizer: AdamW
   weight_decay: 0.00001
   num_workers: 0
+  weight_decay: 0.0001
 
 output:
   base_dir: outputs/B1
