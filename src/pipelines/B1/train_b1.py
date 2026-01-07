@@ -38,14 +38,16 @@ def train_b1(cfg):
 
     # ===== Augmentations =====
     transform_train = transforms.Compose([
-        transforms.RandomResizedCrop(224, scale=(0.8, 1.0), ratio=(0.9, 1.1)),
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.ColorJitter(brightness=0.1,contrast=0.1,saturation=0.05,hue=0.02),
-        transforms.ToTensor(),
-        transforms.RandomErasing(p=0.05, scale=(0.02, 0.08), ratio=(0.3, 3.3)),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]),])
+            transforms.RandomResizedCrop(224, scale=(0.7, 1.0), ratio=(0.9, 1.1)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1, hue=0.02),
+            transforms.RandomRotation(degrees=10),
+            transforms.ToTensor(),
+            transforms.RandomErasing(p=0.1, scale=(0.02, 0.08), ratio=(0.3, 3.3)),
+            transforms.Normalize(
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225])])
+
 
 
     transform_val = transforms.Compose([
@@ -98,7 +100,7 @@ def train_b1(cfg):
 
 
     # ===== Model =====
-    model = ResNetB1(freeze_backbone=False).to(device)
+    model = ResNetB1(freeze_backbone=True).to(device)
     total_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logger.info(f"Number of trainable params: {total_trainable_params}")
 
