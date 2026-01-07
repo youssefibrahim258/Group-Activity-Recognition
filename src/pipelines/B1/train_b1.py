@@ -108,7 +108,7 @@ def train_b1(cfg):
     lr=cfg["training"]["lr"],
     weight_decay=1e-4)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3)
 
 
     # ===== Training loop =====
