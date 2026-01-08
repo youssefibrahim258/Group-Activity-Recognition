@@ -4,9 +4,11 @@ from sklearn.metrics import f1_score, classification_report
 
 from src.utils.plots import plot_confusion_matrix,plot_loss,plot_f1
 from src.mlflow.logger import log_metrics
+from src.utils.mixup import mixup_data, mixup_criterion
+
 
 def train(model,train_loader,val_loader,criterion,optimizer,scheduler,device,cfg,
-          logger,writer,encoder):
+          logger,writer,encoder,mixup=False):
     """
     Generic training engine used for all baselines.
         - Training / validation loop
@@ -39,8 +41,15 @@ def train(model,train_loader,val_loader,criterion,optimizer,scheduler,device,cfg
             labels = labels.to(device)
 
             optimizer.zero_grad()
-            outputs = model(imgs)
-            loss = criterion(outputs, labels)
+            if mixup:
+                imgs_mixed, targets_a, targets_b, lam = mixup_data(imgs, labels, alpha=1.0)
+                outputs = model(imgs_mixed)
+                loss = mixup_criterion(criterion, outputs, targets_a, targets_b, lam)
+                                
+            else :    
+                outputs = model(imgs)
+                loss = criterion(outputs, labels)
+
             loss.backward()
             optimizer.step()
 

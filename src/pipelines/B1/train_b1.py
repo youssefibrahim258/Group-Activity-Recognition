@@ -16,6 +16,7 @@ from src.mlflow.logger import start_mlflow, end_mlflow
 
 
 def train_b1(cfg):
+    
     set_seed(cfg.get("seed", 42))
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -126,12 +127,21 @@ def train_b1(cfg):
         weight_decay=cfg["training"]["weight_decay"]
     )
 
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer,
-        T_max=cfg["training"]["epochs"],
-        eta_min=1e-6
-    )
 
+    if cfg["training"]["scheduler"]=="StepLR":
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer,
+            step_size=5,
+            gamma=0.1
+        )
+    else :
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=cfg["training"]["epochs"],
+            eta_min=1e-6
+        )
+
+    
     # Train
     start_mlflow(cfg["baseline"], cfg["output"]["mlruns_dir"])
 
@@ -146,7 +156,8 @@ def train_b1(cfg):
         cfg=cfg,
         logger=logger,
         writer=writer,
-        encoder=encoder
+        encoder=encoder,
+        mixup=cfg["training"]["mixup"]
     )
 
     end_mlflow()
