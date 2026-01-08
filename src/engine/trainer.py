@@ -2,19 +2,20 @@ import os
 import torch
 from sklearn.metrics import f1_score, classification_report
 
-from src.utils.plots import plot_confusion_matrix,plot_loss,plot_f1
+from src.utils.plots import plot_confusion_matrix, plot_loss, plot_f1
 from src.mlflow.logger import log_metrics
 from src.utils.mixup import mixup_data, mixup_criterion
 
 
-def train(model,train_loader,val_loader,criterion,optimizer,scheduler,device,cfg,
-          logger,writer,encoder,mixup=False):
+def train(model, train_loader, val_loader, criterion, optimizer, scheduler, device, cfg,
+          logger, writer, encoder, mixup=False):
     """
     Generic training engine used for all baselines.
         - Training / validation loop
         - Logging
         - Early stopping
         - Saving best checkpoint
+        - Supports Mixup for training loss
     """
 
     best_val_f1 = float("-inf")
@@ -41,27 +42,33 @@ def train(model,train_loader,val_loader,criterion,optimizer,scheduler,device,cfg
             labels = labels.to(device)
 
             optimizer.zero_grad()
+
             if mixup:
+                # Mixup for loss
                 imgs_mixed, targets_a, targets_b, lam = mixup_data(imgs, labels, alpha=1.0)
                 outputs = model(imgs_mixed)
                 loss = mixup_criterion(criterion, outputs, targets_a, targets_b, lam)
-                                
-            else :    
+
+                # Forward pass on original images for F1
+                with torch.no_grad():
+                    outputs_real = model(imgs)
+                    train_preds.extend(outputs_real.argmax(1).cpu().tolist())
+                    train_labels.extend(labels.cpu().tolist())
+            else:
                 outputs = model(imgs)
                 loss = criterion(outputs, labels)
+                train_preds.extend(outputs.argmax(1).cpu().tolist())
+                train_labels.extend(labels.cpu().tolist())
 
             loss.backward()
             optimizer.step()
-
             train_loss += loss.item()
-            train_preds.extend(outputs.argmax(1).cpu().tolist())
-            train_labels.extend(labels.cpu().tolist())
 
         train_loss /= len(train_loader)
         train_f1 = f1_score(train_labels, train_preds, average="macro")
-
         train_loss_history.append(train_loss)
 
+        # Validation 
         model.eval()
         val_loss = 0.0
         val_preds, val_labels = [], []
@@ -87,7 +94,7 @@ def train(model,train_loader,val_loader,criterion,optimizer,scheduler,device,cfg
         if scheduler is not None:
             scheduler.step()
 
-        # Logging
+        # Logging 
         logger.info(
             f"[Epoch {epoch+1}/{cfg['training']['epochs']}] "
             f"Train Loss: {train_loss:.4f} | Train F1: {train_f1:.4f} | "
@@ -101,14 +108,15 @@ def train(model,train_loader,val_loader,criterion,optimizer,scheduler,device,cfg
                 "val_loss": val_loss,
                 "val_f1": val_f1
             },
-            step=epoch)
+            step=epoch
+        )
 
         writer.add_scalar("Loss/Train", train_loss, epoch)
         writer.add_scalar("Loss/Val", val_loss, epoch)
         writer.add_scalar("F1/Train", train_f1, epoch)
         writer.add_scalar("F1/Val", val_f1, epoch)
 
-        # Early stopping
+        # Early stopping 
         if val_f1 > best_val_f1:
             best_val_f1 = val_f1
             torch.save(
@@ -123,7 +131,7 @@ def train(model,train_loader,val_loader,criterion,optimizer,scheduler,device,cfg
             logger.info("Early stopping triggered")
             break
 
-    # Final Evaluation
+    #  Final Evaluation 
     model.load_state_dict(
         torch.load(os.path.join(checkpoints_dir, "best.pt")),
         strict=False
@@ -151,6 +159,8 @@ def train(model,train_loader,val_loader,criterion,optimizer,scheduler,device,cfg
     )
 
     logger.info("Final Validation Classification Report:\n" + report)
+
+    # Plots 
     plot_confusion_matrix(
         final_labels,
         final_preds,

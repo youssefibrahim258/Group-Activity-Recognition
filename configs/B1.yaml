@@ -37,7 +37,6 @@ training:
   scheduler: "StepLR"
 
 
-
 output:
   base_dir: outputs/B1
   checkpoints_dir: outputs/B1/checkpoints
