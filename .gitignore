@@ -1,7 +1,3 @@
-outputs/
 __pycache__/
 *.pt
 data_set/
-
-configs/B3.yaml
-src/datasets/volleyball_player_dataset.py

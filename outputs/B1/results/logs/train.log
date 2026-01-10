@@ -1,0 +1,52 @@
+2026-01-07 11:06:24,817 [INFO] Starting training: B1
+2026-01-07 11:06:24,817 [INFO] Using device: cuda
+2026-01-07 11:07:11,663 [INFO] Class weights: tensor([0.9505, 1.0307, 0.7620, 2.1870, 1.6708, 0.7116, 0.9308, 0.8849],
+       device='cuda:0')
+2026-01-07 11:07:11,663 [INFO] Train class distribution: Counter({5: 378, 2: 353, 7: 304, 6: 289, 0: 283, 1: 261, 4: 161, 3: 123})
+2026-01-07 11:07:13,673 [INFO] Number of trainable params: 23524424
+2026-01-07 11:08:41,774 [INFO] [Epoch 1/40] Train Loss: 2.0604 | Train F1: 0.2624 | Val Loss: 1.8739 | Val F1: 0.2215
+2026-01-07 11:10:13,144 [INFO] [Epoch 2/40] Train Loss: 1.8080 | Train F1: 0.4417 | Val Loss: 1.6895 | Val F1: 0.2890
+2026-01-07 11:11:46,507 [INFO] [Epoch 3/40] Train Loss: 1.7309 | Train F1: 0.5346 | Val Loss: 1.4824 | Val F1: 0.3982
+2026-01-07 11:13:20,524 [INFO] [Epoch 4/40] Train Loss: 1.6096 | Train F1: 0.5999 | Val Loss: 1.6084 | Val F1: 0.3734
+2026-01-07 11:14:53,805 [INFO] [Epoch 5/40] Train Loss: 1.5265 | Train F1: 0.6354 | Val Loss: 1.3297 | Val F1: 0.4814
+2026-01-07 11:16:27,879 [INFO] [Epoch 6/40] Train Loss: 1.5707 | Train F1: 0.6486 | Val Loss: 1.1603 | Val F1: 0.5604
+2026-01-07 11:18:02,234 [INFO] [Epoch 7/40] Train Loss: 1.4670 | Train F1: 0.6663 | Val Loss: 1.2490 | Val F1: 0.5292
+2026-01-07 11:19:36,134 [INFO] [Epoch 8/40] Train Loss: 1.4697 | Train F1: 0.6709 | Val Loss: 1.2701 | Val F1: 0.5097
+2026-01-07 11:21:09,551 [INFO] [Epoch 9/40] Train Loss: 1.4328 | Train F1: 0.6965 | Val Loss: 1.3263 | Val F1: 0.4689
+2026-01-07 11:22:43,529 [INFO] [Epoch 10/40] Train Loss: 1.4116 | Train F1: 0.6981 | Val Loss: 1.0727 | Val F1: 0.6267
+2026-01-07 11:24:17,191 [INFO] [Epoch 11/40] Train Loss: 1.4004 | Train F1: 0.7006 | Val Loss: 1.1030 | Val F1: 0.6143
+2026-01-07 11:25:50,438 [INFO] [Epoch 12/40] Train Loss: 1.3930 | Train F1: 0.7194 | Val Loss: 1.0738 | Val F1: 0.6075
+2026-01-07 11:27:24,687 [INFO] [Epoch 13/40] Train Loss: 1.3667 | Train F1: 0.7387 | Val Loss: 1.1828 | Val F1: 0.5749
+2026-01-07 11:28:57,848 [INFO] [Epoch 14/40] Train Loss: 1.4332 | Train F1: 0.7351 | Val Loss: 1.1482 | Val F1: 0.5904
+2026-01-07 11:30:31,290 [INFO] [Epoch 15/40] Train Loss: 1.3844 | Train F1: 0.7323 | Val Loss: 1.1963 | Val F1: 0.5334
+2026-01-07 11:32:05,574 [INFO] [Epoch 16/40] Train Loss: 1.3214 | Train F1: 0.7517 | Val Loss: 1.2459 | Val F1: 0.5379
+2026-01-07 11:33:39,416 [INFO] [Epoch 17/40] Train Loss: 1.3882 | Train F1: 0.7453 | Val Loss: 1.0098 | Val F1: 0.6579
+2026-01-07 11:35:13,961 [INFO] [Epoch 18/40] Train Loss: 1.3328 | Train F1: 0.7693 | Val Loss: 1.0204 | Val F1: 0.6368
+2026-01-07 11:36:47,455 [INFO] [Epoch 19/40] Train Loss: 1.3572 | Train F1: 0.7543 | Val Loss: 1.1201 | Val F1: 0.5701
+2026-01-07 11:38:21,679 [INFO] [Epoch 20/40] Train Loss: 1.3470 | Train F1: 0.7567 | Val Loss: 1.2114 | Val F1: 0.5363
+2026-01-07 11:39:55,525 [INFO] [Epoch 21/40] Train Loss: 1.3448 | Train F1: 0.7516 | Val Loss: 0.9025 | Val F1: 0.7072
+2026-01-07 11:41:29,346 [INFO] [Epoch 22/40] Train Loss: 1.3250 | Train F1: 0.7694 | Val Loss: 0.9528 | Val F1: 0.6776
+2026-01-07 11:43:03,411 [INFO] [Epoch 23/40] Train Loss: 1.2995 | Train F1: 0.7798 | Val Loss: 1.0731 | Val F1: 0.6234
+2026-01-07 11:44:37,047 [INFO] [Epoch 24/40] Train Loss: 1.2654 | Train F1: 0.7867 | Val Loss: 0.9524 | Val F1: 0.6497
+2026-01-07 11:46:11,478 [INFO] [Epoch 25/40] Train Loss: 1.2666 | Train F1: 0.7850 | Val Loss: 1.0329 | Val F1: 0.6528
+2026-01-07 11:47:51,871 [INFO] [Epoch 26/40] Train Loss: 1.3226 | Train F1: 0.7853 | Val Loss: 0.9810 | Val F1: 0.6670
+2026-01-07 11:49:27,308 [INFO] [Epoch 27/40] Train Loss: 1.2633 | Train F1: 0.7865 | Val Loss: 1.0745 | Val F1: 0.6213
+2026-01-07 11:51:01,267 [INFO] [Epoch 28/40] Train Loss: 1.3463 | Train F1: 0.7738 | Val Loss: 1.0744 | Val F1: 0.6168
+2026-01-07 11:51:01,271 [INFO] No improvement for 7 epochs. Early stopping.
+2026-01-07 11:51:22,896 [INFO] Final Validation Classification Report:
+              precision    recall  f1-score   support
+
+       r_set       0.63      0.62      0.62       169
+     r_spike       0.71      0.69      0.70       189
+      r-pass       0.70      0.72      0.71       238
+  r_winpoint       0.76      0.84      0.79        85
+  l_winpoint       0.75      0.88      0.81       104
+      l-pass       0.65      0.65      0.65       222
+     l-spike       0.70      0.75      0.72       174
+       l_set       0.76      0.56      0.65       160
+
+    accuracy                           0.70      1341
+   macro avg       0.71      0.71      0.71      1341
+weighted avg       0.70      0.70      0.70      1341
+
+2026-01-07 11:51:23,422 [INFO] Training completed successfully.
