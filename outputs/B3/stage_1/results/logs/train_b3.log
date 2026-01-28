@@ -1,0 +1,50 @@
+2026-01-26 18:38:56,223 [INFO] Starting B3 Training
+2026-01-26 18:38:56,223 [INFO] Device: cuda
+2026-01-26 18:38:56,223 [INFO] Train class distribution: Counter({8: 17498, 7: 2376, 0: 1534, 5: 1342, 2: 1074, 1: 597, 4: 576, 3: 539, 6: 167})
+2026-01-26 18:38:56,443 [INFO] Class weights: tensor([ 1.8617,  4.7837,  2.6591,  5.2985,  4.9581,  2.1281, 17.1011,  1.2020,
+         0.1632], device='cuda:0')
+2026-01-26 18:44:27,219 [INFO] [Epoch 1/40] Train Loss: 0.7993 | Train F1: 0.7130 | Val Loss: 1.4501 | Val F1: 0.5482
+2026-01-26 18:50:00,301 [INFO] [Epoch 2/40] Train Loss: 0.4298 | Train F1: 0.8453 | Val Loss: 1.0345 | Val F1: 0.6752
+2026-01-26 18:55:35,437 [INFO] [Epoch 3/40] Train Loss: 0.3295 | Train F1: 0.8822 | Val Loss: 1.1579 | Val F1: 0.6368
+2026-01-26 19:01:08,513 [INFO] [Epoch 4/40] Train Loss: 0.2753 | Train F1: 0.9039 | Val Loss: 0.8552 | Val F1: 0.7294
+2026-01-26 19:06:41,851 [INFO] [Epoch 5/40] Train Loss: 0.2437 | Train F1: 0.9150 | Val Loss: 0.9455 | Val F1: 0.7108
+2026-01-26 19:12:15,044 [INFO] [Epoch 6/40] Train Loss: 0.2169 | Train F1: 0.9224 | Val Loss: 0.9606 | Val F1: 0.7035
+2026-01-26 19:17:47,337 [INFO] [Epoch 7/40] Train Loss: 0.1965 | Train F1: 0.9289 | Val Loss: 0.9102 | Val F1: 0.7229
+2026-01-26 19:23:19,882 [INFO] [Epoch 8/40] Train Loss: 0.1774 | Train F1: 0.9377 | Val Loss: 0.8684 | Val F1: 0.7494
+2026-01-26 19:28:53,073 [INFO] [Epoch 9/40] Train Loss: 0.1799 | Train F1: 0.9360 | Val Loss: 1.0817 | Val F1: 0.7021
+2026-01-26 19:34:26,500 [INFO] [Epoch 10/40] Train Loss: 0.1583 | Train F1: 0.9459 | Val Loss: 1.0201 | Val F1: 0.7147
+2026-01-26 19:39:58,003 [INFO] [Epoch 11/40] Train Loss: 0.1490 | Train F1: 0.9477 | Val Loss: 0.9794 | Val F1: 0.7186
+2026-01-26 19:45:29,312 [INFO] [Epoch 12/40] Train Loss: 0.1437 | Train F1: 0.9488 | Val Loss: 1.0204 | Val F1: 0.7304
+2026-01-26 19:51:00,562 [INFO] [Epoch 13/40] Train Loss: 0.0910 | Train F1: 0.9685 | Val Loss: 0.9153 | Val F1: 0.7509
+2026-01-26 19:56:34,363 [INFO] [Epoch 14/40] Train Loss: 0.0758 | Train F1: 0.9736 | Val Loss: 0.9253 | Val F1: 0.7524
+2026-01-26 20:02:07,581 [INFO] [Epoch 15/40] Train Loss: 0.0699 | Train F1: 0.9764 | Val Loss: 0.9408 | Val F1: 0.7517
+2026-01-26 20:07:40,866 [INFO] [Epoch 16/40] Train Loss: 0.0675 | Train F1: 0.9767 | Val Loss: 0.9508 | Val F1: 0.7643
+2026-01-26 20:13:15,695 [INFO] [Epoch 17/40] Train Loss: 0.0614 | Train F1: 0.9800 | Val Loss: 1.0937 | Val F1: 0.7420
+2026-01-26 20:18:48,542 [INFO] [Epoch 18/40] Train Loss: 0.0647 | Train F1: 0.9785 | Val Loss: 0.9836 | Val F1: 0.7594
+2026-01-26 20:24:20,365 [INFO] [Epoch 19/40] Train Loss: 0.0583 | Train F1: 0.9809 | Val Loss: 0.9461 | Val F1: 0.7833
+2026-01-26 20:29:54,090 [INFO] [Epoch 20/40] Train Loss: 0.0581 | Train F1: 0.9808 | Val Loss: 0.9935 | Val F1: 0.7728
+2026-01-26 20:35:26,470 [INFO] [Epoch 21/40] Train Loss: 0.0541 | Train F1: 0.9819 | Val Loss: 1.0015 | Val F1: 0.7682
+2026-01-26 20:41:00,034 [INFO] [Epoch 22/40] Train Loss: 0.0492 | Train F1: 0.9840 | Val Loss: 1.0292 | Val F1: 0.7573
+2026-01-26 20:46:34,297 [INFO] [Epoch 23/40] Train Loss: 0.0533 | Train F1: 0.9820 | Val Loss: 1.0159 | Val F1: 0.7577
+2026-01-26 20:52:08,561 [INFO] [Epoch 24/40] Train Loss: 0.0397 | Train F1: 0.9866 | Val Loss: 0.9903 | Val F1: 0.7812
+2026-01-26 20:57:39,854 [INFO] [Epoch 25/40] Train Loss: 0.0297 | Train F1: 0.9896 | Val Loss: 1.0312 | Val F1: 0.7755
+2026-01-26 21:03:11,241 [INFO] [Epoch 26/40] Train Loss: 0.0283 | Train F1: 0.9910 | Val Loss: 1.0653 | Val F1: 0.7817
+2026-01-26 21:03:11,246 [INFO] Early stopping triggered
+2026-01-26 21:04:18,684 [INFO] Final Validation Classification Report:
+              precision    recall  f1-score   support
+
+     waiting       0.52      0.48      0.50      1073
+     setting       0.76      0.74      0.75       356
+     digging       0.47      0.43      0.45       644
+     falling       0.77      0.86      0.81       327
+     spiking       0.83      0.51      0.63       379
+    blocking       0.81      0.80      0.80       821
+     jumping       0.04      0.01      0.02       104
+      moving       0.57      0.62      0.60      1442
+    standing       0.86      0.88      0.87     10835
+
+    accuracy                           0.79     15981
+   macro avg       0.63      0.59      0.60     15981
+weighted avg       0.78      0.79      0.78     15981
+
+2026-01-26 21:04:20,415 [INFO] B3 Training Finished

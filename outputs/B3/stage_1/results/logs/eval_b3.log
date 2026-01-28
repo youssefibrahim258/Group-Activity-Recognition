@@ -1,0 +1,22 @@
+2026-01-26 21:04:20,834 [INFO] Starting B3 TEST evaluation
+2026-01-26 21:04:20,834 [INFO] Device: cuda
+2026-01-26 21:08:04,862 [INFO] TEST Accuracy: 0.8083
+2026-01-26 21:08:04,862 [INFO] TEST F1-score: 0.8057
+2026-01-26 21:08:04,862 [INFO] TEST Classification Report:
+              precision    recall  f1-score   support
+
+     waiting       0.50      0.54      0.52      1040
+     setting       0.81      0.76      0.78       372
+     digging       0.56      0.42      0.48       659
+     falling       0.81      0.81      0.81       377
+     spiking       0.89      0.66      0.75       372
+    blocking       0.87      0.84      0.85       855
+     jumping       0.11      0.02      0.04        88
+      moving       0.59      0.65      0.62      1352
+    standing       0.87      0.89      0.88     10819
+
+    accuracy                           0.81     15934
+   macro avg       0.67      0.62      0.64     15934
+weighted avg       0.81      0.81      0.81     15934
+
+2026-01-26 21:08:04,972 [INFO] B3 TEST evaluation finished successfully
